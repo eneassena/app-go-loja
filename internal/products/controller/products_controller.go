@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -38,19 +39,16 @@ func (c *ProductsController) FindByID() gin.HandlerFunc {
 		param := ctx.Param("id")
 		id, err := strconv.Atoi(param)
 		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{
-				"message": "invalid id",
-			})
+			web.NewContextResponse(ctx, 500, errors.New("invalid id"))
 			return
 		}
 
 		products, err := c.service.FindByID(id)
 		if err != nil {
-			ctx.JSON(500, err)
+			web.NewContextResponse(ctx, 500, err)
 			return
 		}
-
-		ctx.JSON(http.StatusOK, web.NewResponse(http.StatusOK, products))
+		web.NewContextResponse(ctx, http.StatusOK, products)
 	}
 }
 

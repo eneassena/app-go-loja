@@ -20,7 +20,11 @@ func (service *ProductsService) FindAll() ([]domain.ProductRequest, error) {
 }
 
 func (service *ProductsService) FindByID(id int) (domain.ProductRequest, error) {
-	return service.Repository.FindByID(id)
+	product, err := service.Repository.FindByID(id)
+	if err != nil {
+		return domain.ProductRequest{}, err
+	}
+	return product, nil
 }
 
 func (service *ProductsService) FindByName(name string) (domain.ProductRequest, error) {

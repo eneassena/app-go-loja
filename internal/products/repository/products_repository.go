@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/eneassena/app-go-loja/internal/products/domain"
 )
@@ -44,13 +45,14 @@ func (repository *ProductsRepository) FindByID(id int) (domain.ProductRequest, e
 
 	defer rows.Close()
 
-	var product domain.ProductRequest
 	if rows.Next() {
+		var product domain.ProductRequest
 		if err := rows.Scan(&product.ID, &product.Name, &product.Type, &product.Price, &product.Count, &product.Category.Name); err != nil {
 			return domain.ProductRequest{}, err
 		}
+		return product, nil
 	}
-	return product, nil
+	return domain.ProductRequest{}, errors.New("Product not found")
 }
 func (repository *ProductsRepository) FindByName(name string) (domain.ProductRequest, error) {
 	return domain.ProductRequest{}, nil
