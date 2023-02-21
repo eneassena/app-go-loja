@@ -14,7 +14,7 @@ type Category struct {
 }
 
 type ProductRequest struct {
-	ID       int      `json:"id",omitempty"`
+	ID       int      `json:"id,omitempty""`
 	Name     string   `json:"name"`
 	Price    float64  `json:"price"`
 	Count    int      `json:"count"`
@@ -28,7 +28,7 @@ type ProductsRepository interface {
 	FindByName(name string) (ProductRequest, error)
 	Create(product ProductRequest) (ProductRequest, error)
 	Remove(product ProductRequest) error
-	UpdateCount(product ProductRequest) (ProductRequest, error)
+	UpdateCount(product ProductRequest) error
 }
 
 type ProductsService interface {
@@ -37,5 +37,5 @@ type ProductsService interface {
 	FindByName(name string) (ProductRequest, error)
 	Create(product ProductRequest) (ProductRequest, error)
 	Remove(product ProductRequest) error
-	UpdateCount(product ProductRequest) (ProductRequest, error)
+	UpdateCount(product ProductRequest) error
 }

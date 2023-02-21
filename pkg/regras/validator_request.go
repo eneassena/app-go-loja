@@ -36,18 +36,17 @@ func msgForTag(tag string) string {
 
 func ValidateErrorInRequest(context *gin.Context, data any) bool {
 	var out []RequestError
-	err := context.ShouldBind(&data)
+	err := context.ShouldBindJSON(&data)
 	if err != nil {
 		var validatorError validator.ValidationErrors
 		var jsonError *json.UnmarshalTypeError
-		var jsonFieldError *json.UnmarshalFieldError
+		var jsonFieldError *json.InvalidUnmarshalError
 		switch {
 		case errors.As(err, &jsonError):
 
 			strin := strings.Split(jsonError.Error(), ":")[1]
 			req := RequestError{jsonError.Field, strin}
-			context.JSON(http.StatusBadRequest,
-				web.NewResponse(http.StatusBadRequest, req))
+			web.NewContextResponse(context, http.StatusInternalServerError, req)
 
 		case errors.As(err, &validatorError):
 			out = make([]RequestError, len(validatorError))
@@ -58,17 +57,16 @@ func ValidateErrorInRequest(context *gin.Context, data any) bool {
 				field, _ := typeData.FieldByName(fe.Field())
 				out[i] = RequestError{field.Tag.Get("json"), msgForTag(fe.Tag())}
 			}
-			context.JSON(http.StatusUnprocessableEntity,
-				web.NewResponse(http.StatusUnprocessableEntity, out))
+			web.NewContextResponse(context, http.StatusUnprocessableEntity, out)
 
 		case errors.As(err, &jsonFieldError):
+
 			strin := strings.Split(jsonError.Error(), ":")[1]
 			req := RequestError{jsonError.Field, strin}
-			context.JSON(http.StatusBadRequest,
-				web.NewResponse(http.StatusBadRequest, req))
+			web.NewContextResponse(context, http.StatusInternalServerError, req)
+
 		default:
-			context.JSON(http.StatusUnprocessableEntity,
-				web.DecodeError(http.StatusUnprocessableEntity, err.Error()))
+			web.NewContextResponse(context, http.StatusUnprocessableEntity, err)
 		}
 		return true
 	}

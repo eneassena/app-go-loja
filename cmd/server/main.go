@@ -16,9 +16,8 @@ func main() {
 	controllerProduct := controller.NewProductsController(serviceProduct)
 
 	router := gin.Default()
-	router.GET("/products", controllerProduct.FindAll())
-	router.POST("/products", controllerProduct.Create())
-	router.GET("/products/:id", controllerProduct.FindByID())
+
+	controllerProduct.Router(router)
 
 	router.Run(":8080")
 

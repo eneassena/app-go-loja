@@ -5,18 +5,22 @@ import (
 )
 
 type ProductsService struct {
-	Repository domain.ProductsService
+	Repository domain.ProductsRepository
 }
 
-func NewProductsService(repository domain.ProductsService) domain.ProductsService {
+func NewProductsService(repository domain.ProductsRepository) domain.ProductsService {
 	return &ProductsService{
 		Repository: repository,
 	}
-
 }
-func (service *ProductsService) FindAll() ([]domain.ProductRequest, error) {
-	return service.Repository.FindAll()
 
+func (service *ProductsService) FindAll() ([]domain.ProductRequest, error) {
+
+	products, erro := service.Repository.FindAll()
+	if erro != nil {
+		return []domain.ProductRequest{}, erro
+	}
+	return products, nil
 }
 
 func (service *ProductsService) FindByID(id int) (domain.ProductRequest, error) {
@@ -28,18 +32,43 @@ func (service *ProductsService) FindByID(id int) (domain.ProductRequest, error) 
 }
 
 func (service *ProductsService) FindByName(name string) (domain.ProductRequest, error) {
-	return domain.ProductRequest{}, nil
+	productByName, err := service.Repository.FindByName(name)
+	if err != nil {
+		return domain.ProductRequest{}, err
+	}
+	return productByName, nil
 }
 
 func (service *ProductsService) Create(product domain.ProductRequest) (domain.ProductRequest, error) {
-	return service.Repository.Create(product)
+	productCreated, erro := service.Repository.Create(product)
+	if erro != nil {
+		return domain.ProductRequest{}, erro
+	}
+	return productCreated, nil
 }
 
 func (service *ProductsService) Remove(product domain.ProductRequest) error {
+	prod, erro := service.Repository.FindByID(product.ID)
+	if erro != nil {
+		return erro
+	}
+
+	erro = service.Repository.Remove(prod)
+	if erro != nil {
+		return erro
+	}
 	return nil
 }
 
-func (service *ProductsService) UpdateCount(product domain.ProductRequest) (domain.ProductRequest, error) {
-	products := domain.ProductRequest{}
-	return products, nil
+func (service *ProductsService) UpdateCount(product domain.ProductRequest) error {
+	prod, erro := service.Repository.FindByID(product.ID)
+	if erro != nil {
+		return erro
+	}
+	prod.Count = product.Count
+	erro = service.Repository.UpdateCount(prod)
+	if erro != nil {
+		return erro
+	}
+	return nil
 }

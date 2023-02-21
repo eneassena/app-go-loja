@@ -18,27 +18,29 @@ func NewProductsRepository(database *sql.DB) domain.ProductsRepository {
 }
 
 func (repository *ProductsRepository) FindAll() ([]domain.ProductRequest, error) {
-	var produtosList []domain.ProductRequest
+	produtosList := []domain.ProductRequest{}
 
-	rows, err := repository.Database.Query("SELECT id,name,price,count,category FROM products")
+	rows, err := repository.Database.Query("SELECT name,type,count,price,category FROM products")
 	if err != nil {
-		return produtosList, err
+		return []domain.ProductRequest{}, err
 	}
 
 	defer rows.Close()
+
 	for rows.Next() {
 		var product domain.ProductRequest
-		err := rows.Scan(&product.ID, &product.Name, &product.Type, &product.Count, &product.Category.Name)
+		err := rows.Scan(&product.Name, &product.Type, &product.Count, &product.Price, &product.Category.Name)
 		if err != nil {
-			return produtosList, err
+			return []domain.ProductRequest{}, err
 		}
 		produtosList = append(produtosList, product)
 	}
 
 	return produtosList, nil
 }
+
 func (repository *ProductsRepository) FindByID(id int) (domain.ProductRequest, error) {
-	rows, err := repository.Database.Query("select id,name,type,price,count,category from products where id = ?", id)
+	rows, err := repository.Database.Query("select id,name,type,count,price,category from products where id = ?", id)
 	if err != nil {
 		return domain.ProductRequest{}, err
 	}
@@ -47,16 +49,27 @@ func (repository *ProductsRepository) FindByID(id int) (domain.ProductRequest, e
 
 	if rows.Next() {
 		var product domain.ProductRequest
-		if err := rows.Scan(&product.ID, &product.Name, &product.Type, &product.Price, &product.Count, &product.Category.Name); err != nil {
+		if err := rows.Scan(&product.ID, &product.Name, &product.Type, &product.Count, &product.Price, &product.Category.Name); err != nil {
 			return domain.ProductRequest{}, err
 		}
 		return product, nil
 	}
-	return domain.ProductRequest{}, errors.New("Product not found")
+	return domain.ProductRequest{}, errors.New("product not found")
+
 }
 func (repository *ProductsRepository) FindByName(name string) (domain.ProductRequest, error) {
-	return domain.ProductRequest{}, nil
+	query := "select name, type, count, price, category from products where name=?;"
+	rows := repository.Database.QueryRow(query, name)
+
+	productByName := domain.ProductRequest{}
+	erro := rows.Scan(&productByName.Name, &productByName.Type, &productByName.Count, &productByName.Price, &productByName.Category.Name)
+	if erro != nil {
+		return domain.ProductRequest{}, erro
+	}
+
+	return productByName, nil
 }
+
 func (repository *ProductsRepository) Create(product domain.ProductRequest) (domain.ProductRequest, error) {
 	stmt, err := repository.Database.Prepare("insert into products (name,type,count,price,category) VALUES(?,?,?,?,?)")
 	if err != nil {
@@ -69,9 +82,32 @@ func (repository *ProductsRepository) Create(product domain.ProductRequest) (dom
 	}
 	return product, nil
 }
+
 func (repository *ProductsRepository) Remove(product domain.ProductRequest) error {
+	query := "delete from products where id=?"
+	result, erro := repository.Database.Exec(query, product.ID)
+	if erro != nil {
+		return erro
+	}
+	if _, erro = result.RowsAffected(); erro != nil {
+		return erro
+	}
 	return nil
 }
-func (repository *ProductsRepository) UpdateCount(product domain.ProductRequest) (domain.ProductRequest, error) {
-	return domain.ProductRequest{}, nil
+
+func (repository *ProductsRepository) UpdateCount(product domain.ProductRequest) error {
+	query := "update products set count=? where id=?"
+	result, erro := repository.Database.Exec(query, product.Count, product.ID)
+	if erro != nil {
+		return erro
+	}
+
+	rowsAffected, erro := result.RowsAffected()
+	if erro != nil {
+		return erro
+	}
+	if rowsAffected == 0 {
+		return errors.New("product not found")
+	}
+	return nil
 }
